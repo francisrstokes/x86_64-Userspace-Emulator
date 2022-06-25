@@ -15,6 +15,13 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  Elf64_Phdr* elf_program_headers = malloc(elf_header.e_phnum * elf_header.e_phentsize);
+  if (!elf_program_headers) {
+    printf("Couldn't allocate memory for program headers\n");
+    return 1;
+  }
+  elf_parse_program_headers(fp, &elf_header, elf_program_headers);
+
   fclose(fp);
 
   return 0;

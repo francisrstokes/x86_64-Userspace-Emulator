@@ -69,6 +69,31 @@ int elf_parse_header(FILE* fp, Elf64_Ehdr* header) {
   return 0;
 }
 
+int elf_parse_program_headers(FILE* fp, const Elf64_Ehdr* header, Elf64_Phdr* phdrs) {
+  Elf64_Phdr* phdr = phdrs;
+
+  size_t num_headers = header->e_phnum;
+  size_t program_offset = header->e_phoff;
+  size_t header_size = header->e_phentsize;
+
+  for (int i = 0; i < num_headers; i++) {
+    // Locate the relevant header within the ELF
+    if (fseek(fp, program_offset + (header_size * i), SEEK_SET) != 0) {
+      return -ELF_ERR_BAD_PHDR;
+    }
+
+    // Read it into the buffer
+    if (fread(phdr, header_size, 1, fp) != 1) {
+      return -ELF_ERR_BAD_PHDR;
+    }
+
+    // Point to the next program header in the buffer
+    phdr++;
+  }
+
+  return 0;
+}
+
 static char* elf_errors[] = {
   "Unknown",
   "The ELF file was too small to read a full header",
@@ -79,6 +104,7 @@ static char* elf_errors[] = {
   "Only System V OS ABI supported",
   "ELF file is not an executable",
   "Unsupported ISA",
+  "Program headers couldn't be read",
 };
 
 char* elf_err_message(int errorIndex) {

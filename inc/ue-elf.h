@@ -17,12 +17,13 @@ enum {
   ELF_ERR_BAD_ABI,
   ELF_ERR_EXECUTABLE,
   ELF_ERR_ISA,
+  ELF_ERR_BAD_PHDR,
   // ...
   ELF_ERR_NUM_ERRORS
 };
+char* elf_err_message(int errorIndex);
 
 int elf_parse_header(FILE* fp, Elf64_Ehdr* header);
-int elf_parse_program_header(FILE* fp, Elf64_Ehdr* header);
-char* elf_err_message(int errorIndex);
+int elf_parse_program_headers(FILE* fp, const Elf64_Ehdr* header, Elf64_Phdr* phdr);
 
 #endif // UE_ELF_H
