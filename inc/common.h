@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <string.h>

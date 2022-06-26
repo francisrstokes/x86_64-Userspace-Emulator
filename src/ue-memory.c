@@ -78,6 +78,77 @@ int load_memory_region(Elf64_Phdr* program_header, FILE* fp) {
   return 0;
 }
 
+bool region_contains_address(memory_region_t* region, uint64_t address) {
+  return (
+    (region)
+    && (address >= region->header.p_vaddr)
+    && (address < (region->header.p_vaddr + region->header.p_memsz))
+  );
+}
+
+static memory_region_t* find_region(uint64_t address) {
+  memory_region_t* region = get_memory_regions();
+  while (region) {
+    if (region_contains_address(region, address)) break;
+    region = region->next;
+  }
+  return region;
+}
+
+bool read_u8(uint64_t address, uint8_t* data_out) {
+  memory_region_t* region = find_region(address);
+    if (!region) return false;
+
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *data_out = region->buffer[region_offset];
+  return true;
+}
+
+bool read_u16(uint64_t address, uint16_t* data_out) {
+  memory_region_t* region = find_region(address);
+  if (!region) return false;
+
+  // Ensure that all the bytes are in this region
+  if (region_contains_address(region, address + 1)) {
+    // TODO: Scan other regions to see if this crosses a segment boundary
+    return false;
+  }
+
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *data_out =  *((uint16_t*)(region->buffer + region_offset));
+  return true;
+}
+
+bool read_u32(uint64_t address, uint32_t* data_out) {
+  memory_region_t* region = find_region(address);
+  if (!region) return false;
+
+  // Ensure that all the bytes are in this region
+  if (!region_contains_address(region, address + 3)) {
+    // TODO: Scan other regions to see if this crosses a segment boundary
+    return false;
+  }
+
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *data_out =  *((uint32_t*)(region->buffer + region_offset));
+  return true;
+}
+
+bool read_u64(uint64_t address, uint64_t* data_out) {
+  memory_region_t* region = find_region(address);
+  if (!region) return false;
+
+  // Ensure that all the bytes are in this region
+  if (region_contains_address(region, address + 7)) {
+    // TODO: Scan other regions to see if this crosses a segment boundary
+    return false;
+  }
+
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *data_out =  *((uint64_t*)(region->buffer + region_offset));
+  return true;
+}
+
 static char* mem_errors[] = {
   "Unknown",
   "Unable to allocate memory for memory region",
