@@ -6,7 +6,9 @@
 
 int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t* instr_out) {
   uint32_t next_u32;
-  read_u32(cpu->rip, &next_u32);
+  if (!read_u32(cpu->rip, &next_u32)) {
+    return -CPU_ERR_UNABLE_TO_READ;
+  }
 
   // Special case these kinds of sequences for now
   if (next_u32 == ENDBR64_U32) {
@@ -16,7 +18,31 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
     return 0;
   }
 
-  uint8_t next_u8 = next_u32 & 0xff;
+  uint8_t next_u8;
+  uint64_t offset = 0;
+
+  // Search for prefixes
+  while (true) {
+    if (!read_u8(cpu->rip + offset, &next_u8)) {
+      return -CPU_ERR_UNABLE_TO_READ;
+    }
+
+    if (next_u8 == 0x66) {
+      instr_out->prefixes.p66 = true;
+      offset += 1;
+      continue;
+    }
+
+    if ((next_u8 >> 4) == 0b0100) {
+      instr_out->prefixes.pREX = true;
+      memcpy(&instr_out->rex, &next_u8, 1);
+      offset += 1;
+      continue;
+    }
+
+    break;
+  }
+
   if (next_u8 == XOR_31_OPCODE) {
     instr_out->size = 2;
     instr_out->type = XOR_31;
@@ -106,6 +132,7 @@ static char* elf_errors[] = {
   "Unable to decode instruction",
   "Invalid ModRM index",
   "Unable to execute instruction",
+  "Unable to fetch instruction bytes from memory",
 };
 
 char* elf_err_message(int errorIndex) {

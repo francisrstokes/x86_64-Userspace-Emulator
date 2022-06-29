@@ -168,6 +168,7 @@ typedef struct x86_64_instr_t {
   uint8_t as_bytes[15];
 
   modrm_t modrm;
+  rex_prefix_t rex;
   prefixes_t prefixes;
 
   // registers
@@ -185,6 +186,7 @@ enum {
   CPU_ERR_UNABLE_TO_DECODE,
   CPU_ERR_INVALID_MODRM_INDEX,
   CPU_ERR_UNABLE_TO_EXECUTE,
+  CPU_ERR_UNABLE_TO_READ,
   // ...
   CPU_ERR_NUM_ERRORS
 };
