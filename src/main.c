@@ -1,6 +1,7 @@
 #include "main.h"
 #include "ue-elf.h"
 #include "ue-memory.h"
+#include "cpu.h"
 
 #define TEST_BIN "/bin/true"
 // #define TEST_BIN "/home/francis/repos/x86_64-userspace-emu/testcases/true"
@@ -39,15 +40,17 @@ int main(int argc, char** argv) {
   // The raw headers are no longer needed after the memory regions are loaded
   free(elf_program_headers);
 
-  // Find the region containing the entry point
-  for (uint64_t i = 0; i < 4; i++) {
-    uint64_t address = elf_header.e_entry + (i * 4);
-    uint32_t value;
-    if (!read_u32(address, &value)) {
-      printf("Read at address 0x%x failed\n", address);
+  cpu_x86_64_t cpu = {
+    .rip = elf_header.e_entry
+  };
+
+  x86_64_instr_t instr;
+  while (1) {
+    ret = fetch_decode_execute(&cpu);
+    if (ret != 0) {
+      printf("Execution error: %s\n", cpu_err_message(ret));
       return 1;
     }
-    printf("[0x%x] -> 0x%x\n", address, value);
   }
 
   free_memory_regions();
