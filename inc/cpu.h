@@ -3,6 +3,12 @@
 
 #include "common.h"
 
+enum {
+  ENDBR64,
+  XOR_31,
+  MOV_89
+};
+
 typedef struct rflags_t {
   uint64_t cf   : 1;
   uint64_t res0 : 1;
@@ -131,11 +137,6 @@ typedef struct modrm_t {
   uint8_t reg : 3;
   uint8_t mod : 2;
 } modrm_t;
-
-enum {
-  ENDBR64,
-  XOR_31,
-};
 
 enum {
   modrm_rax,  // 0b0000
