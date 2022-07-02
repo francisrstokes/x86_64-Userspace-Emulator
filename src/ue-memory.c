@@ -109,7 +109,7 @@ bool read_u16(uint64_t address, uint16_t* data_out) {
   if (!region) return false;
 
   // Ensure that all the bytes are in this region
-  if (region_contains_address(region, address + 1)) {
+  if (!region_contains_address(region, address + 1)) {
     // TODO: Scan other regions to see if this crosses a segment boundary
     return false;
   }
@@ -139,7 +139,7 @@ bool read_u64(uint64_t address, uint64_t* data_out) {
   if (!region) return false;
 
   // Ensure that all the bytes are in this region
-  if (region_contains_address(region, address + 7)) {
+  if (!region_contains_address(region, address + 7)) {
     // TODO: Scan other regions to see if this crosses a segment boundary
     return false;
   }
