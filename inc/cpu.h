@@ -6,7 +6,8 @@
 enum {
   ENDBR64,
   XOR_31,
-  MOV_89
+  MOV_89,
+  POP_58,
 };
 
 typedef struct rflags_t {
@@ -171,6 +172,8 @@ typedef struct x86_64_instr_t {
   modrm_t modrm;
   rex_prefix_t rex;
   prefixes_t prefixes;
+
+  uint8_t reg_index;
 
   // registers
   // immediates

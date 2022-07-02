@@ -4,6 +4,7 @@
 #define ENDBR64_U32   (0xfa1e0ff3)
 #define XOR_31_OPCODE (0x31)
 #define MOV_89_OPCODE (0x89)
+#define POP_58_MASK   (0x58)
 
 int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t* instr_out) {
   uint32_t next_u32;
@@ -62,7 +63,6 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
   }
 
   if (instr_out->prefixes.pREX && instr_out->rex.w == 1 && next_u8 == MOV_89_OPCODE) {
-    // 49 89 d1
     instr_out->size = 2 + offset;
     instr_out->type = MOV_89;
 
@@ -74,6 +74,14 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
     instr_out->as_bytes[offset + 0] = 0x89;
     instr_out->as_bytes[offset + 1] = next_u8;
 
+    return 0;
+  }
+
+  if ((next_u8 & POP_58_MASK) == POP_58_MASK) {
+    instr_out->size = 1 + offset;
+    instr_out->type = POP_58;
+    instr_out->as_bytes[offset + 0] = next_u8;
+    instr_out->reg_index = next_u8 & ~(POP_58_MASK);
     return 0;
   }
 
@@ -104,8 +112,8 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
         mask = 0xffffffffffffffff;
       }
 
-      int8_t r_bit = (instr.rex.r) << 3;
-      int8_t b_bit = (instr.rex.b) << 3;
+      uint8_t r_bit = (instr.rex.r) << 3;
+      uint8_t b_bit = (instr.rex.b) << 3;
       uint64_t* src = reg_from_nibble(cpu, r_bit | instr.modrm.reg);
       uint64_t* dst = reg_from_nibble(cpu, b_bit | instr.modrm.rm);
 
@@ -132,8 +140,8 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
         mask = 0xffffffffffffffff;
       }
 
-      int8_t r_bit = (instr.rex.r) << 3;
-      int8_t b_bit = (instr.rex.b) << 3;
+      uint8_t r_bit = (instr.rex.r) << 3;
+      uint8_t b_bit = (instr.rex.b) << 3;
       uint64_t* src = reg_from_nibble(cpu, r_bit | instr.modrm.reg);
       uint64_t* dst = reg_from_nibble(cpu, b_bit | instr.modrm.rm);
 
@@ -148,6 +156,31 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       *dst |= *src & mask;
 
       cpu->rip += instr.size;
+      return 0;
+    }
+
+    case POP_58: {
+      // Determine destination register
+      uint8_t b_bit = (instr.rex.b) << 3;
+      uint64_t* dst = reg_from_nibble(cpu, b_bit | instr.reg_index);
+
+      if (dst == NULL) {
+        return -CPU_ERR_INVALID_MODRM_INDEX;
+      }
+
+      // Pop the actual value from the stack
+      uint64_t stack_value;
+      ret = pop_stack(cpu, &stack_value);
+      if (ret != 0) {
+        return ret;
+      }
+
+      // Write to the destination register
+      *dst = stack_value;
+
+      // Increment the instruction pointer
+      cpu->rip += instr.size;
+
       return 0;
     }
   }
