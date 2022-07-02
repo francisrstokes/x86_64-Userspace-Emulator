@@ -39,7 +39,7 @@ static memory_region_t* get_last_region(void) {
 
 int load_memory_region(Elf64_Phdr* program_header, FILE* fp) {
   // Allocate memory for a memory_region_t to hold region data
-  memory_region_t* region = malloc(sizeof(memory_region_t));
+  memory_region_t* region = calloc(1, sizeof(memory_region_t));
   if (!region) {
     return -MEM_ERR_MALLOC;
   }
@@ -55,7 +55,7 @@ int load_memory_region(Elf64_Phdr* program_header, FILE* fp) {
   // We're only going to allocate memory in this region if the segment specifies it
   if (program_header->p_memsz > 0) {
   // Allocate a buffer with enough space for the bytes (according to p_memsz)
-    region->buffer = malloc(program_header->p_memsz);
+    region->buffer = calloc(1, program_header->p_memsz);
     if (!region->buffer) {
       return -MEM_ERR_MALLOC;
     }
