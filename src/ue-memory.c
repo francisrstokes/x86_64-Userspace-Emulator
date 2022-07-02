@@ -109,7 +109,6 @@ int create_stack_region(const uint64_t start_address) {
   return 0;
 }
 
-
 bool region_contains_address(memory_region_t* region, uint64_t address) {
   return (
     (region)
@@ -136,16 +135,14 @@ bool read_u8(uint64_t address, uint8_t* data_out) {
   return true;
 }
 
+// TODO: Scan other regions to see if this crosses a segment boundary
+#define ValidateMultiByteRegion(region, address, size) \
+  if (!region) return false; \
+  if (!region_contains_address(region, address + (size - 1))) return false;
+
 bool read_u16(uint64_t address, uint16_t* data_out) {
   memory_region_t* region = find_region(address);
-  if (!region) return false;
-
-  // Ensure that all the bytes are in this region
-  if (!region_contains_address(region, address + 1)) {
-    // TODO: Scan other regions to see if this crosses a segment boundary
-    return false;
-  }
-
+  ValidateMultiByteRegion(region, address, 2);
   uint64_t region_offset = address - region->header.p_vaddr;
   *data_out =  *((uint16_t*)(region->buffer + region_offset));
   return true;
@@ -153,14 +150,7 @@ bool read_u16(uint64_t address, uint16_t* data_out) {
 
 bool read_u32(uint64_t address, uint32_t* data_out) {
   memory_region_t* region = find_region(address);
-  if (!region) return false;
-
-  // Ensure that all the bytes are in this region
-  if (!region_contains_address(region, address + 3)) {
-    // TODO: Scan other regions to see if this crosses a segment boundary
-    return false;
-  }
-
+  ValidateMultiByteRegion(region, address, 4);
   uint64_t region_offset = address - region->header.p_vaddr;
   *data_out =  *((uint32_t*)(region->buffer + region_offset));
   return true;
@@ -168,16 +158,42 @@ bool read_u32(uint64_t address, uint32_t* data_out) {
 
 bool read_u64(uint64_t address, uint64_t* data_out) {
   memory_region_t* region = find_region(address);
-  if (!region) return false;
-
-  // Ensure that all the bytes are in this region
-  if (!region_contains_address(region, address + 7)) {
-    // TODO: Scan other regions to see if this crosses a segment boundary
-    return false;
-  }
-
+  ValidateMultiByteRegion(region, address, 8);
   uint64_t region_offset = address - region->header.p_vaddr;
   *data_out =  *((uint64_t*)(region->buffer + region_offset));
+  return true;
+}
+
+bool write_u8(uint64_t address, uint8_t data) {
+  memory_region_t* region = find_region(address);
+  if (!region) return false;
+
+  uint64_t region_offset = address - region->header.p_vaddr;
+  region->buffer[region_offset] = data;
+  return true;
+}
+
+bool write_u16(uint64_t address, uint16_t data) {
+  memory_region_t* region = find_region(address);
+  ValidateMultiByteRegion(region, address, 2);
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *((uint16_t*)(region->buffer + region_offset)) = data;
+  return true;
+}
+
+bool write_u32(uint64_t address, uint32_t data) {
+  memory_region_t* region = find_region(address);
+  ValidateMultiByteRegion(region, address, 4);
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *((uint32_t*)(region->buffer + region_offset)) = data;
+  return true;
+}
+
+bool write_u64(uint64_t address, uint64_t data) {
+  memory_region_t* region = find_region(address);
+  ValidateMultiByteRegion(region, address, 8);
+  uint64_t region_offset = address - region->header.p_vaddr;
+  *((uint64_t*)(region->buffer + region_offset)) = data;
   return true;
 }
 

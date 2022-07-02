@@ -196,6 +196,13 @@ int pop_stack(cpu_x86_64_t* cpu, uint64_t* data_out) {
   return 0;
 }
 
+int push_stack(cpu_x86_64_t* cpu, uint64_t data) {
+  cpu->rsp -= 8;
+  if (!write_u64(cpu->rsp, data)) {
+    return -CPU_ERR_INVALID_STACK_POINTER;
+  }
+  return 0;
+}
 
 uint64_t* reg_from_nibble(const cpu_x86_64_t* cpu, const uint8_t nibble) {
   switch (nibble) {

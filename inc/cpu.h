@@ -185,6 +185,7 @@ int fetch_decode_execute(cpu_x86_64_t* cpu);
 int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t* instr_out);
 uint64_t* reg_from_nibble(const cpu_x86_64_t* cpu, const uint8_t nibble);
 int pop_stack(cpu_x86_64_t* cpu, uint64_t* data_out);
+int push_stack(cpu_x86_64_t* cpu, uint64_t data);
 
 enum {
   CPU_ERR_UNKNOWN = 0,

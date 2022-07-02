@@ -30,6 +30,11 @@ bool read_u16(uint64_t address, uint16_t* data_out);
 bool read_u32(uint64_t address, uint32_t* data_out);
 bool read_u64(uint64_t address, uint64_t* data_out);
 
+bool write_u8(uint64_t address, uint8_t data);
+bool write_u16(uint64_t address, uint16_t data);
+bool write_u32(uint64_t address, uint32_t data);
+bool write_u64(uint64_t address, uint64_t data);
+
 enum {
   MEM_ERR_UNKNOWN = 0,
   MEM_ERR_MALLOC,
