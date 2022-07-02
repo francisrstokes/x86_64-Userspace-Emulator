@@ -78,6 +78,38 @@ int load_memory_region(Elf64_Phdr* program_header, FILE* fp) {
   return 0;
 }
 
+int create_stack_region(const uint64_t start_address) {
+  // Allocate memory for a memory_region_t to hold region data
+  memory_region_t* region = calloc(1, sizeof(memory_region_t));
+  if (!region) {
+    return -MEM_ERR_MALLOC;
+  }
+
+  // If this is the first region, just set it in the list
+  if (region_ll == NULL) {
+    region_ll = region;
+  } else {
+    // Otherwise, append to the end of the linked list
+    get_last_region()->next = region;
+  }
+
+  // Allocate the buffer
+  region->buffer = calloc(1, STACK_SIZE);
+  if (!region->buffer) {
+    return -MEM_ERR_MALLOC;
+  }
+
+  // This isn't a real program header, but we can treat it as one
+  region->header.p_vaddr = start_address - STACK_SIZE;
+  region->header.p_paddr = start_address - STACK_SIZE;
+  region->header.p_memsz = STACK_SIZE;
+  region->header.p_type = PT_LOAD;
+  region->header.p_flags = PF_R | PF_W; // Read and write, but not execute
+
+  return 0;
+}
+
+
 bool region_contains_address(memory_region_t* region, uint64_t address) {
   return (
     (region)

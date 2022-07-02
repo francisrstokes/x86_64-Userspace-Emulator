@@ -4,6 +4,11 @@
 #include "common.h"
 #include "ue-elf.h"
 
+// TODO: Make these configurable
+// Finger in the wind: 1MiB of stack size
+#define STACK_SIZE            (1024 * 1024)
+#define STACK_START_ADDRESS  (0x7fffffffffffd2a0ULL)
+
 struct memory_region_t {
   uint8_t* buffer;
   Elf64_Phdr header;
@@ -16,6 +21,7 @@ memory_region_t* get_memory_regions(void);
 size_t get_num_memory_regions(void);
 int free_memory_regions(void);
 int load_memory_region(Elf64_Phdr* program_header, FILE* fp);
+int create_stack_region(const uint64_t start_address);
 
 bool region_contains_address(memory_region_t* region, uint64_t address);
 

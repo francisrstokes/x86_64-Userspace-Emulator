@@ -39,8 +39,13 @@ int main(int argc, char** argv) {
   // The raw headers are no longer needed after the memory regions are loaded
   free(elf_program_headers);
 
+  create_stack_region(STACK_START_ADDRESS);
+
   cpu_x86_64_t cpu = {
-    .rip = elf_header.e_entry
+    .rip = elf_header.e_entry,
+    // Most programs include a `pop` in their _start, so we need to ensure
+    // that there is at least a one slot there to accommodate
+    .rsp = STACK_START_ADDRESS - 8,
   };
 
   x86_64_instr_t instr;

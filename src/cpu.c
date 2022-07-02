@@ -155,6 +155,15 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
   return 1;
 }
 
+int pop_stack(cpu_x86_64_t* cpu, uint64_t* data_out) {
+  if (!read_u64(cpu->rsp, data_out)) {
+    return -CPU_ERR_INVALID_STACK_POINTER;
+  }
+  cpu->rsp += 8;
+  return 0;
+}
+
+
 uint64_t* reg_from_nibble(const cpu_x86_64_t* cpu, const uint8_t nibble) {
   switch (nibble) {
     case modrm_rax: return (uint64_t*)&cpu->rax;
@@ -177,7 +186,7 @@ uint64_t* reg_from_nibble(const cpu_x86_64_t* cpu, const uint8_t nibble) {
   return NULL;
 }
 
-static char* elf_errors[] = {
+static char* cpu_errors[] = {
   "Unknown",
   "Unable to decode instruction",
   "Invalid ModRM index",
@@ -191,7 +200,7 @@ char* cpu_err_message(int errorIndex) {
   }
 
   if (errorIndex >= ELF_ERR_NUM_ERRORS) {
-    return elf_errors[ELF_ERR_UNKNOWN];
+    return cpu_errors[ELF_ERR_UNKNOWN];
   }
-  return elf_errors[errorIndex];
+  return cpu_errors[errorIndex];
 }

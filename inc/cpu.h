@@ -181,6 +181,7 @@ typedef struct x86_64_instr_t {
 int fetch_decode_execute(cpu_x86_64_t* cpu);
 int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t* instr_out);
 uint64_t* reg_from_nibble(const cpu_x86_64_t* cpu, const uint8_t nibble);
+int pop_stack(cpu_x86_64_t* cpu, uint64_t* data_out);
 
 enum {
   CPU_ERR_UNKNOWN = 0,
@@ -188,6 +189,7 @@ enum {
   CPU_ERR_INVALID_MODRM_INDEX,
   CPU_ERR_UNABLE_TO_EXECUTE,
   CPU_ERR_UNABLE_TO_READ,
+  CPU_ERR_INVALID_STACK_POINTER,
   // ...
   CPU_ERR_NUM_ERRORS
 };
