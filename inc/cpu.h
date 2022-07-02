@@ -11,27 +11,27 @@ enum {
 };
 
 typedef struct rflags_t {
-  uint64_t cf   : 1;
+  uint64_t cf   : 1; // Carry Flag
   uint64_t res0 : 1;
-  uint64_t pf   : 1;
+  uint64_t pf   : 1; // Parity Flag
   uint64_t res1 : 1;
-  uint64_t af   : 1;
+  uint64_t af   : 1; // Auxiliary Carry Flag
   uint64_t res2 : 1;
-  uint64_t zf   : 1;
-  uint64_t sf   : 1;
-  uint64_t tf   : 1;
-  uint64_t if_  : 1;
-  uint64_t df   : 1;
-  uint64_t of   : 1;
-  uint64_t iopl : 2;
-  uint64_t nt   : 1;
+  uint64_t zf   : 1; // Zero Flag
+  uint64_t sf   : 1; // Sign Flag
+  uint64_t tf   : 1; // Trap Flag
+  uint64_t if_  : 1; // Interrupt Enable Flag
+  uint64_t df   : 1; // Direction Flag
+  uint64_t of   : 1; // Overflow Flag
+  uint64_t iopl : 2; // IOPL 	I/O Privilege Level
+  uint64_t nt   : 1; // Nested Task
   uint64_t res3 : 1;
-  uint64_t rf   : 1;
-  uint64_t vm   : 1;
-  uint64_t ac   : 1;
-  uint64_t vif  : 1;
-  uint64_t vip  : 1;
-  uint64_t id   : 1;
+  uint64_t rf   : 1; // Resume Flag
+  uint64_t vm   : 1; // Virtual-8086 Mode
+  uint64_t ac   : 1; // Alignment Check / Access Control
+  uint64_t vif  : 1; // Virtual Interrupt Flag
+  uint64_t vip  : 1; // Virtual Interrupt Pending
+  uint64_t id   : 1; // ID Flag
 } rflags_t;
 
 typedef struct cr0_t {

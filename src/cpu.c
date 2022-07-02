@@ -6,6 +6,15 @@
 #define MOV_89_OPCODE (0x89)
 #define POP_58_MASK   (0x58)
 
+static uint8_t parity(uint64_t x) {
+  uint8_t count = 0;
+  while (x) {
+    count += x & 1;
+    x >>= 1;
+  }
+  return (count & 1) ? 0 : 1;
+}
+
 int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t* instr_out) {
   uint32_t next_u32;
   if (!read_u32(cpu->rip, &next_u32)) {
@@ -127,6 +136,14 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       // Compute the xor
       *dst |= (*src ^ *dst) & mask;
 
+      // Set the flags
+      cpu->rflags.cf = 0;
+      cpu->rflags.of = 0;
+      cpu->rflags.sf = (*dst & (1 << 63)) > 0 ? 1 : 0;
+      cpu->rflags.zf = (*dst == 0) ? 1 : 0;
+      cpu->rflags.pf = parity(*dst);
+
+      // Increment the instruction pointer
       cpu->rip += instr.size;
       return 0;
     }
@@ -155,6 +172,9 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       // Write the masked src to dst
       *dst |= *src & mask;
 
+      // No flags affected with mov
+
+      // Increment the instruction pointer
       cpu->rip += instr.size;
       return 0;
     }
@@ -177,6 +197,8 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
 
       // Write to the destination register
       *dst = stack_value;
+
+      // No flags affected with pop
 
       // Increment the instruction pointer
       cpu->rip += instr.size;
