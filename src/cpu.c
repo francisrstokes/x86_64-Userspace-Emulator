@@ -65,7 +65,7 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
     }
     memcpy(&instr_out->modrm, &next_u8, 1);
 
-    instr_out->as_bytes[offset + 0] = 0x31;
+    instr_out->as_bytes[offset + 0] = XOR_31_OPCODE;
     instr_out->as_bytes[offset + 1] = next_u8;
 
     return 0;
@@ -139,7 +139,7 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       // Set the flags
       cpu->rflags.cf = 0;
       cpu->rflags.of = 0;
-      cpu->rflags.sf = (*dst & (1 << 63)) > 0 ? 1 : 0;
+      cpu->rflags.sf = (*dst & (1UL << 63UL)) > 0 ? 1 : 0;
       cpu->rflags.zf = (*dst == 0) ? 1 : 0;
       cpu->rflags.pf = parity(*dst);
 
@@ -254,6 +254,7 @@ static char* cpu_errors[] = {
   "Invalid ModRM index",
   "Unable to execute instruction",
   "Unable to fetch instruction bytes from memory",
+  "Unable to fetch from invalid stack pointer address",
 };
 
 char* cpu_err_message(int errorIndex) {
