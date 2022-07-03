@@ -8,6 +8,15 @@ enum {
   XOR_31,
   MOV_89,
   POP_58,
+
+  ADD_83,
+  OR_83,
+  ADC_83,
+  SBB_83,
+  AND_83,
+  SUB_83,
+  XOR_83,
+  CMP_83,
 };
 
 typedef struct rflags_t {
@@ -158,6 +167,17 @@ enum {
   modrm_r15,  // 0b1111
 };
 
+enum {
+  SIGN_EXTEND_ADD,  // 000
+  SIGN_EXTEND_OR,   // 001
+  SIGN_EXTEND_ADC,  // 010
+  SIGN_EXTEND_SBB,  // 011
+  SIGN_EXTEND_AND,  // 100
+  SIGN_EXTEND_SUB,  // 101
+  SIGN_EXTEND_XOR,  // 110
+  SIGN_EXTEND_CMP,  // 111
+};
+
 typedef struct prefixes_t {
   bool p66;
   bool pREX;
@@ -174,9 +194,8 @@ typedef struct x86_64_instr_t {
   prefixes_t prefixes;
 
   uint8_t reg_index;
+  uint64_t imm64;
 
-  // registers
-  // immediates
   // SIB etc
 
 } x86_64_instr_t;
@@ -194,6 +213,7 @@ enum {
   CPU_ERR_UNABLE_TO_EXECUTE,
   CPU_ERR_UNABLE_TO_READ,
   CPU_ERR_INVALID_STACK_POINTER,
+  CPU_ERR_NOT_IMPLEMENTED_YET,
   // ...
   CPU_ERR_NUM_ERRORS
 };
