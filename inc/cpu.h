@@ -7,6 +7,7 @@ enum {
   ENDBR64,
   XOR_31,
   MOV_89,
+  MOV_C7,
   POP_58,
   PUSH_50,
 

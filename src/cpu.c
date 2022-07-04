@@ -1,16 +1,18 @@
 #include "cpu.h"
 #include "ue-memory.h"
 
-#define ENDBR64_U32         (0xfa1e0ff3)
-#define XOR_31_OPCODE       (0x31)
-#define MOV_89_OPCODE       (0x89)
-#define POP_58_BASE         (0x58)
-#define PUSH_50_BASE        (0x50)
-#define SEXTEND_OP_OPCODE   (0x83)
+#define ENDBR64_U32           (0xfa1e0ff3)
+#define XOR_31_OPCODE         (0x31)
+#define MOV_89_OPCODE         (0x89)
+#define MOV_C7_OPCODE         (0xC7)
+#define POP_58_BASE           (0x58)
+#define PUSH_50_BASE          (0x50)
+#define SEXTEND_OP_OPCODE     (0x83)
 
-#define OP5MSB_REG3LSB      (0xf8)
+#define OP5MSB_REG3LSB        (0xf8)
 
-#define SIGN_EXTEND_64      (0xffffffffffffff00)
+#define SIGN_EXTEND_8_TO_64   (0xffffffffffffff00ULL)
+#define SIGN_EXTEND_32_TO_64  (0xffffffff00000000ULL)
 
 static uint8_t parity(uint64_t x) {
   uint8_t count = 0;
@@ -101,7 +103,7 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
     }
 
     // Perform sign extension
-    instr_out->imm64 |= (instr_out->imm64 & 0x80) ? SIGN_EXTEND_64 : 0;
+    instr_out->imm64 |= (instr_out->imm64 & 0x80) ? : 0;
 
     instr_out->as_bytes[offset + 0] = SEXTEND_OP_OPCODE;
     instr_out->as_bytes[offset + 1] = next_u8;
@@ -121,6 +123,30 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
 
     instr_out->as_bytes[offset + 0] = 0x89;
     instr_out->as_bytes[offset + 1] = next_u8;
+
+    return 0;
+  }
+
+  if (instr_out->prefixes.pREX && instr_out->rex.w == 1 && next_u8 == MOV_C7_OPCODE) {
+    instr_out->size = 6 + offset;
+    instr_out->type = MOV_C7;
+
+    if (!read_u8(cpu->rip + offset + 1, &next_u8)) {
+      return -CPU_ERR_UNABLE_TO_READ;
+    }
+    memcpy(&instr_out->modrm, &next_u8, 1);
+    instr_out->reg_index = instr_out->modrm.rm;
+
+    instr_out->as_bytes[offset + 0] = MOV_C7_OPCODE;
+    instr_out->as_bytes[offset + 1] = next_u8;
+
+    // Read the imm32 and sign extend
+    uint32_t imm32;
+    if (!read_u32(cpu->rip + offset + 2, &imm32)) {
+      return -CPU_ERR_UNABLE_TO_READ;
+    }
+    instr_out->imm64 = (uint64_t)imm32;
+    instr_out->imm64 |= (instr_out->imm64 & 0x80000000) ? SIGN_EXTEND_32_TO_64 : 0;
 
     return 0;
   }
@@ -249,6 +275,35 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
 
       // Write the masked src to dst
       *dst |= *src & mask;
+
+      // No flags affected with mov
+
+      // Increment the instruction pointer
+      cpu->rip += instr.size;
+      return 0;
+    }
+
+    case MOV_C7: {
+      // By default, treat as a 32 bit operation
+      uint64_t mask = 0xffffffff;
+      if (instr.prefixes.p66) {
+        mask = 0xffff;
+      } else if (instr.prefixes.pREX) {
+        mask = 0xffffffffffffffff;
+      }
+
+      uint8_t w_bit = (instr.rex.w) << 3;
+      uint64_t* dst = reg_from_nibble(cpu, w_bit | instr.reg_index);
+
+      if (dst == NULL) {
+        return -CPU_ERR_INVALID_MODRM_INDEX;
+      }
+
+      // Clear any bits in the masked region
+      *dst &= ~mask;
+
+      // Write the masked src to dst
+      *dst |= instr.imm64 & mask;
 
       // No flags affected with mov
 
