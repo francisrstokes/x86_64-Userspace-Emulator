@@ -8,6 +8,7 @@ enum {
   XOR_31,
   MOV_89,
   POP_58,
+  PUSH_50,
 
   ADD_83,
   OR_83,

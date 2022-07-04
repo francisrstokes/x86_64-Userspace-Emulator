@@ -4,8 +4,11 @@
 #define ENDBR64_U32         (0xfa1e0ff3)
 #define XOR_31_OPCODE       (0x31)
 #define MOV_89_OPCODE       (0x89)
-#define POP_58_MASK         (0x58)
+#define POP_58_BASE         (0x58)
+#define PUSH_50_BASE        (0x50)
 #define SEXTEND_OP_OPCODE   (0x83)
+
+#define OP5MSB_REG3LSB      (0xf8)
 
 #define SIGN_EXTEND_64      (0xffffffffffffff00)
 
@@ -122,11 +125,19 @@ int decode_at_address(const uint64_t address, cpu_x86_64_t* cpu, x86_64_instr_t*
     return 0;
   }
 
-  if ((next_u8 & POP_58_MASK) == POP_58_MASK) {
+  if ((next_u8 & OP5MSB_REG3LSB) == POP_58_BASE) {
     instr_out->size = 1 + offset;
     instr_out->type = POP_58;
     instr_out->as_bytes[offset + 0] = next_u8;
-    instr_out->reg_index = next_u8 & ~(POP_58_MASK);
+    instr_out->reg_index = next_u8 & ~(OP5MSB_REG3LSB);
+    return 0;
+  }
+
+  if ((next_u8 & OP5MSB_REG3LSB) == PUSH_50_BASE) {
+    instr_out->size = 1 + offset;
+    instr_out->type = PUSH_50;
+    instr_out->as_bytes[offset + 0] = next_u8;
+    instr_out->reg_index = next_u8 & ~(OP5MSB_REG3LSB);
     return 0;
   }
 
@@ -215,7 +226,6 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       return 0;
     }
 
-
     case MOV_89: {
       // By default, treat as a 32 bit operation
       uint64_t mask = 0xffffffff;
@@ -267,6 +277,29 @@ int fetch_decode_execute(cpu_x86_64_t* cpu) {
       *dst = stack_value;
 
       // No flags affected with pop
+
+      // Increment the instruction pointer
+      cpu->rip += instr.size;
+
+      return 0;
+    }
+
+    case PUSH_50: {
+      // Determine destination register
+      uint8_t b_bit = (instr.rex.b) << 3;
+      uint64_t* src = reg_from_nibble(cpu, b_bit | instr.reg_index);
+
+      if (src == NULL) {
+        return -CPU_ERR_INVALID_MODRM_INDEX;
+      }
+
+      // Push the actual value to the stack
+      ret = push_stack(cpu, *src);
+      if (ret != 0) {
+        return ret;
+      }
+
+      // No flags affected with push
 
       // Increment the instruction pointer
       cpu->rip += instr.size;
